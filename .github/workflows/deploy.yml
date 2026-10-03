@@ -1,0 +1,50 @@
+name: Build and Deploy
+
+on:
+  push:
+    branches: [ "main" ]
+
+jobs:
+  build-and-update:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+    - name: Checkout Code
+      uses: actions/checkout@v3
+
+    - name: Log in to GitHub Container Registry
+      uses: docker/login-action@v2
+      with:
+        registry: ghcr.io
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Build and Push Docker image
+      uses: docker/build-push-action@v4
+      with:
+        context: .
+        push: true
+        # コミットの固有ハッシュ値をタグにして安全なバージョン管理を行います
+        tags: ghcr.io/parumenn/file-k8s:${{ github.sha }}
+
+    - name: Checkout Manifest Repository
+      uses: actions/checkout@v3
+      with:
+        repository: parumenn/file-manifest
+        token: ${{ secrets.MANIFEST_REPO_TOKEN }}
+        path: manifest-repo
+
+    - name: Update Kubernetes Manifest
+      run: |
+        cd manifest-repo
+        # file-app.yaml の image: 〇〇 の部分を、今回ビルドした最新のイメージタグに書き換える
+        sed -i "s|image: ghcr.io/parumenn/file-k8s:.*|image: ghcr.io/parumenn/file-k8s:${{ github.sha }}|g" file-app.yaml
+        
+        git config user.name "GitHub Actions"
+        git config user.email "actions@github.com"
+        git add file-app.yaml
+        git commit -m "Auto-update image tag to ${{ github.sha }} from file-k8s"
+        git push origin main

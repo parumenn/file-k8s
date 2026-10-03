@@ -6,6 +6,7 @@ from datetime import datetime, timedelta
 from fastapi import FastAPI, File, UploadFile, Form, HTTPException, Query
 from fastapi.responses import FileResponse, HTMLResponse
 from fastapi.staticfiles import StaticFiles
+import uvicorn
 from threading import Thread
 
 app = FastAPI()
@@ -122,7 +123,6 @@ async def admin_delete(uid: str, token: str = Query(None)):
         return {"status": "success"}
     raise HTTPException(status_code=404)
 
-# 404防止用の静的HTMLルーティング
 @app.get("/download.html", response_class=HTMLResponse)
 async def serve_download():
     return FileResponse("static/download.html")

@@ -7,18 +7,18 @@
 </head>
 <body>
     <div class="glass-panel">
-        <h1 id="app-title" style="user-select: none; cursor: default;">File Share</h1>
-        <p>ファイルをドロップするか、クリックしてアップロード</p>
+        <h1 id="app-title" style="margin-top: 0; color: #1f2937; user-select: none;">File Share</h1>
+        <p style="color: #4b5563; margin-bottom: 25px;">ファイルをドラッグ＆ドロップまたはクリックしてアップロード</p>
         
         <form id="upload-form">
             <div class="drop-zone" id="drop-zone">
-                <span id="file-name">ファイルが選択されていません</span>
+                <span id="file-name" style="color: #6b7280; font-weight: 500;">ファイルを選択またはドロップ</span>
                 <input type="file" id="file-input" class="hidden" required>
             </div>
             
-            <div style="margin-bottom: 15px;">
-                <label>保存期間: </label>
-                <select id="days-select" style="padding: 5px; border-radius: 5px;">
+            <div style="margin-bottom: 25px;">
+                <label style="font-size: 14px; color: #4b5563; font-weight: 500;">保存期間: </label>
+                <select id="days-select" style="padding: 8px 12px; border-radius: 8px; border: 1px solid #d1d5db; background: white;">
                     <option value="1">1日</option>
                     <option value="2" selected>2日 (デフォルト)</option>
                     <option value="3">3日</option>
@@ -26,12 +26,15 @@
                 </select>
             </div>
             
-            <button type="submit" class="btn">アップロードしてリンク生成</button>
+            <button type="submit" class="btn" style="width: 100%;">アップロードしてリンクを生成</button>
         </form>
 
-        <div id="result" class="hidden" style="margin-top:20px;">
-            <h3>共有リンク:</h3>
-            <input type="text" id="download-link-input" readonly style="width: 100%; padding: 8px; box-sizing: border-box; border-radius: 5px; border: 1px solid #ccc; text-align: center; background: #fff;" onclick="this.select();">
+        <div id="result" class="hidden" style="margin-top:25px; text-align: left; background: rgba(79,70,229,0.05); padding: 15px; border-radius: 12px; border: 1px solid rgba(79,70,229,0.2);">
+            <label style="font-size: 13px; font-weight: 600; color: #4f46e5;">共有リンク:</label>
+            <div style="display: flex; gap: 8px; margin-top: 6px;">
+                <input type="text" id="download-link-input" readonly style="flex: 1; padding: 8px 12px; border-radius: 8px; border: 1px solid #d1d5db; background: white; font-size: 14px;" onclick="this.select();">
+                <button onclick="copyLink()" class="btn" style="padding: 8px 14px; margin: 0; font-size: 14px;">コピー</button>
+            </div>
         </div>
     </div>
 
@@ -68,6 +71,13 @@
             linkInput.value = window.location.origin + data.url;
             resultDiv.classList.remove('hidden');
         });
+
+        function copyLink() {
+            const linkInput = document.getElementById('download-link-input');
+            linkInput.select();
+            navigator.clipboard.writeText(linkInput.value);
+            alert("リンクをクリップボードにコピーしました！");
+        }
 
         // 裏コマンド (タイトル3回クリックで永続化モード解禁)
         let clickCount = 0;

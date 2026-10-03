@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>Admin Dashboard - File Share</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="glass-panel" style="max-width: 720px; text-align: left;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+            <h2 style="margin: 0; color: #1f2937;">📊 管理ダッシュボード</h2>
+            <div>
+                <button onclick="loadFiles()" class="btn btn-secondary" style="padding: 8px 14px; font-size: 13px; margin-right: 8px;">🔄 更新</button>
+                <button onclick="logout()" class="btn btn-danger" style="padding: 8px 14px; font-size: 13px;">ログアウト</button>
+            </div>
+        </div>
+
+        <p style="color: #4b5563; font-size: 14px; margin-bottom: 20px;">アップロードされているファイルの一覧・管理を行います。</p>
+        
+        <div id="file-list" style="max-height: 480px; overflow-y: auto; padding-right: 4px;">
+            <div style="text-align: center; color: #6b7280; padding: 30px;">読み込み中...</div>
+        </div>
+    </div>
+
+    <script>
+        const token = sessionStorage.getItem('admin_token');
+        if (!token) {
+            window.location.href = '/manage.html';
+        }
+
+        async function loadFiles() {
+            try {
+                const res = await fetch('/api/admin/list?token=' + encodeURIComponent(token));
+                if (res.status === 403) {
+                    logout();
+                    return;
+                }
+                if (!res.ok) throw new Error("データの取得に失敗しました");
+
+                const data = await res.json();
+                let html = '';
+                const keys = Object.keys(data);
+                
+                if (keys.length === 0) {
+                    html = '<div style="text-align: center; color: #6b7280; padding: 40px; background: white; border-radius: 14px; border: 1px solid #e5e7eb;">現在アップロードされているファイルはありません。</div>';
+                } else {
+                    for (let uid of keys) {
+                        const file = data[uid];
+                        const expireText = file.expires_at === 'never' ? '永続 (無期限)' : new Date(file.expires_at).toLocaleString();
+                        const fileUrl = `${window.location.origin}/download.html?id=${uid}`;
+                        
+                        html += `
+                            <div class="file-card">
+                                <div style="font-weight: 600; color: #1f2937; font-size: 16px; margin-bottom: 6px; word-break: break-all;">
+                                    📁 ${file.original_name}
+                                </div>
+                                <div style="font-size: 13px; color: #4b5563; margin-bottom: 12px;">
+                                    有効期限: ${expireText} &nbsp;|&nbsp; サイズ: ${formatBytes(file.size)}
+                                </div>
+                                <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+                                    <input type="text" value="${fileUrl}" readonly style="flex: 1; min-width: 200px; padding: 6px 10px; font-size: 12px; border: 1px solid #d1d5db; border-radius: 6px; background: #f9fafb;" onclick="this.select();">
+                                    <a href="${fileUrl}" target="_blank" class="btn" style="padding: 6px 12px; font-size: 13px; text-decoration: none; margin: 0;">🔗 リンクを開く</a>
+                                    <button onclick="copyUrl('${fileUrl}')" class="btn btn-secondary" style="padding: 6px 12px; font-size: 13px; margin: 0;">コピー</button>
+                                    <button onclick="deleteFile('${uid}')" class="btn btn-danger" style="padding: 6px 12px; font-size: 13px; margin: 0;">削除</button>
+                                </div>
+                            </div>
+                        `;
+                    }
+                }
+                document.getElementById('file-list').innerHTML = html;
+            } catch (err) {
+                alert(err.message);
+            }
+        }
+
+        async function deleteFile(uid) {
+            if (confirm("このファイルを完全に削除しますか？")) {
+                const res = await fetch(`/api/admin/delete/${uid}?token=` + encodeURIComponent(token), { method: 'DELETE' });
+                if (res.ok) {
+                    loadFiles();
+                } else {
+                    alert("削除に失敗しました。");
+                }
+            }
+        }
+
+        function copyUrl(url) {
+            navigator.clipboard.writeText(url);
+            alert("共有リンクをコピーしました！");
+        }
+
+        function logout() {
+            sessionStorage.removeItem('admin_token');
+            window.location.href = '/manage.html';
+        }
+
+        function formatBytes(bytes) {
+            if (bytes === 0) return '0 Bytes';
+            const k = 1024, sizes = ['Bytes', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+        }
+
+        loadFiles();
+    </script>
+</body>
+</html>

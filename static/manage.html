@@ -2,95 +2,46 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <title>Admin Dashboard - File Share</title>
+    <title>Admin Login - File Share</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <div class="glass-panel" style="max-width: 700px;">
-        <h2>🔐 管理ダッシュボード</h2>
-
-        <!-- ログイン用セクション -->
-        <div id="auth-section">
-            <p>管理者パスワードを入力してください</p>
-            <input type="password" id="secret-key" class="input-field" placeholder="Password">
-            <br>
-            <button onclick="loadFiles()" class="btn">ログイン</button>
-            <div id="login-error" style="color: red; margin-top: 10px; font-size: 14px;"></div>
-        </div>
-
-        <!-- ログイン後表示されるメイン一覧セクション -->
-        <div id="dashboard-section" class="hidden" style="text-align: left; margin-top: 20px;">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
-                <h3 style="margin: 0;">アップロード済みファイル一覧</h3>
-                <button onclick="location.reload()" style="background:none; border:none; color:#764ba2; cursor:pointer; font-weight:bold;">🔄 更新</button>
-            </div>
-            <div id="file-list" style="max-height: 400px; overflow-y: auto;"></div>
-        </div>
+    <div class="glass-panel">
+        <h2 style="color: #1f2937; margin-top: 0;">🔐 管理者ログイン</h2>
+        <p style="color: #4b5563; margin-bottom: 25px;">管理パスワードを入力してください</p>
+        
+        <input type="password" id="secret-key" class="input-field" placeholder="パスワードを入力">
+        <br>
+        <button onclick="handleLogin()" class="btn" style="width: 100%;">ログイン</button>
+        <div id="login-error" style="color: #ef4444; margin-top: 15px; font-size: 14px; font-weight: 500;"></div>
     </div>
 
     <script>
-        async function loadFiles() {
+        async function handleLogin() {
             const token = document.getElementById('secret-key').value;
             const errDiv = document.getElementById('login-error');
             errDiv.textContent = "";
 
             try {
-                const res = await fetch('/api/admin/list?token=' + encodeURIComponent(token));
+                const res = await fetch('/api/admin/verify?token=' + encodeURIComponent(token));
                 if (res.status === 403) {
                     errDiv.textContent = "⚠️ パスワードが違います";
                     return;
                 }
                 if (!res.ok) throw new Error("通信エラーが発生しました");
 
-                const data = await res.json();
-                
-                // 認証成功：ログイン画面を隠してダッシュボードを表示
-                document.getElementById('auth-section').classList.add('hidden');
-                document.getElementById('dashboard-section').classList.remove('hidden');
-
-                let html = '';
-                const keys = Object.keys(data);
-                if (keys.length === 0) {
-                    html = '<p style="text-align: center; color: #666;">現在アップロードされているファイルはありません。</p>';
-                } else {
-                    for (let uid of keys) {
-                        const file = data[uid];
-                        const expireText = file.expires_at === 'never' ? '永続' : new Date(file.expires_at).toLocaleString();
-                        html += `
-                            <div class="file-card">
-                                <div style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 70%;">
-                                    <strong>${file.original_name}</strong><br>
-                                    <small style="color: #666;">期限: ${expireText} | サイズ: ${formatBytes(file.size)}</small>
-                                </div>
-                                <button onclick="deleteFile('${uid}')" class="btn" style="background: #e53e3e; margin: 0; padding: 6px 12px; font-size: 14px;">削除</button>
-                            </div>
-                        `;
-                    }
-                }
-                document.getElementById('file-list').innerHTML = html;
+                // トークンを sessionStorage に保存してダッシュボードへページ遷移
+                sessionStorage.setItem('admin_token', token);
+                window.location.href = '/dashboard.html';
             } catch (err) {
                 errDiv.textContent = "⚠️ " + err.message;
             }
         }
 
-        async function deleteFile(uid) {
-            const token = document.getElementById('secret-key').value;
-            if (confirm("このファイルを完全に削除しますか？")) {
-                const res = await fetch(`/api/admin/delete/${uid}?token=` + encodeURIComponent(token), { method: 'DELETE' });
-                if (res.ok) {
-                    loadFiles(); // リスト再読み込み
-                } else {
-                    alert("削除に失敗しました。");
-                }
-            }
-        }
-
-        function formatBytes(bytes) {
-            if (bytes === 0) return '0 Bytes';
-            const k = 1024, sizes = ['Bytes', 'KB', 'MB', 'GB'];
-            const i = Math.floor(Math.log(bytes) / Math.log(k));
-            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
-        }
+        // Enterキーでログイン
+        document.getElementById('secret-key').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') handleLogin();
+        });
     </script>
 </body>
 </html>

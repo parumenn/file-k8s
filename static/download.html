@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>ファイルダウンロード - File Share</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="glass-panel">
+        <h2>📥 ファイル共有</h2>
+        <div id="loading" style="margin: 20px 0;">ファイルを読み込んでいます...</div>
+        
+        <div id="file-info" class="hidden" style="text-align: left; background: rgba(255,255,255,0.7); padding: 20px; border-radius: 10px; margin: 20px 0;">
+            <p><strong>ファイル名:</strong> <span id="f-name"></span></p>
+            <p><strong>ファイルサイズ:</strong> <span id="f-size"></span></p>
+            <p><strong>有効期限:</strong> <span id="f-expire"></span></p>
+        </div>
+
+        <button id="download-btn" class="btn hidden" onclick="startDownload()">ダウンロードする</button>
+        <div id="error-msg" class="hidden" style="color: red; font-weight: bold; margin-top: 20px;"></div>
+    </div>
+
+    <script>
+        const urlParams = new URLSearchParams(window.location.search);
+        const fileId = urlParams.get('id');
+
+        async function init() {
+            if (!fileId) {
+                showError("無効なリンクです。");
+                return;
+            }
+            try {
+                const res = await fetch(`/api/info/${fileId}`);
+                if (!res.ok) throw new Error("ファイルが見つからないか、有効期限切れです。");
+                const data = await res.json();
+
+                document.getElementById('f-name').textContent = data.original_name;
+                document.getElementById('f-size').textContent = formatBytes(data.size);
+                document.getElementById('f-expire').textContent = data.expires_at === 'never' ? '無期限（永続）' : new Date(data.expires_at).toLocaleString();
+
+                document.getElementById('loading').classList.add('hidden');
+                document.getElementById('file-info').classList.remove('hidden');
+                document.getElementById('download-btn').classList.remove('hidden');
+            } catch (err) {
+                showError(err.message);
+            }
+        }
+
+        function startDownload() {
+            window.location.href = `/api/download/${fileId}`;
+        }
+
+        function showError(msg) {
+            document.getElementById('loading').classList.add('hidden');
+            const errDiv = document.getElementById('error-msg');
+            errDiv.textContent = msg;
+            errDiv.classList.remove('hidden');
+        }
+
+        function formatBytes(bytes) {
+            if (bytes === 0) return '0 Bytes';
+            const k = 1024, sizes = ['Bytes', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+        }
+
+        init();
+    </script>
+</body>
+</html>

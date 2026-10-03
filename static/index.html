@@ -7,7 +7,7 @@
 </head>
 <body>
     <div class="glass-panel">
-        <h1 id="app-title" style="user-select: none;">File Share</h1>
+        <h1 id="app-title" style="user-select: none; cursor: default;">File Share</h1>
         <p>ファイルをドロップするか、クリックしてアップロード</p>
         
         <form id="upload-form">
@@ -18,21 +18,20 @@
             
             <div style="margin-bottom: 15px;">
                 <label>保存期間: </label>
-                <select id="days-select">
+                <select id="days-select" style="padding: 5px; border-radius: 5px;">
                     <option value="1">1日</option>
                     <option value="2" selected>2日 (デフォルト)</option>
                     <option value="3">3日</option>
                     <option value="7">7日</option>
-                    <!-- 永続化は裏コマンドで追加されます -->
                 </select>
             </div>
             
             <button type="submit" class="btn">アップロードしてリンク生成</button>
         </form>
 
-        <div id="result" class="hidden">
+        <div id="result" class="hidden" style="margin-top:20px;">
             <h3>共有リンク:</h3>
-            <a id="download-link" href="#" target="_blank" style="color:#764ba2; font-weight:bold;"></a>
+            <input type="text" id="download-link-input" readonly style="width: 100%; padding: 8px; box-sizing: border-box; border-radius: 5px; border: 1px solid #ccc; text-align: center; background: #fff;" onclick="this.select();">
         </div>
     </div>
 
@@ -41,7 +40,6 @@
         const fileInput = document.getElementById('file-input');
         const fileName = document.getElementById('file-name');
         
-        // ドラッグ＆ドロップのUI制御
         dropZone.addEventListener('click', () => fileInput.click());
         fileInput.addEventListener('change', () => {
             if(fileInput.files.length > 0) fileName.textContent = fileInput.files[0].name;
@@ -56,7 +54,6 @@
             }
         });
 
-        // アップロード処理
         document.getElementById('upload-form').addEventListener('submit', async (e) => {
             e.preventDefault();
             const formData = new FormData();
@@ -67,14 +64,12 @@
             const data = await res.json();
             
             const resultDiv = document.getElementById('result');
-            const linkTag = document.getElementById('download-link');
-            const fullUrl = window.location.origin + data.url;
-            linkTag.href = data.url;
-            linkTag.textContent = fullUrl;
+            const linkInput = document.getElementById('download-link-input');
+            linkInput.value = window.location.origin + data.url;
             resultDiv.classList.remove('hidden');
         });
 
-        // 🤫 裏コマンド (タイトル3回クリックで永続化モード解禁)
+        // 裏コマンド (タイトル3回クリックで永続化モード解禁)
         let clickCount = 0;
         document.getElementById('app-title').addEventListener('click', () => {
             clickCount++;

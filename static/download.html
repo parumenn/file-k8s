@@ -7,17 +7,17 @@
 </head>
 <body>
     <div class="glass-panel">
-        <h2>📥 ファイル共有</h2>
-        <div id="loading" style="margin: 20px 0;">ファイルを読み込んでいます...</div>
+        <h2 style="color: #1f2937; margin-top: 0;">📥 ファイルダウンロード</h2>
+        <div id="loading" style="color: #4b5563; margin: 30px 0;">ファイルを読み込んでいます...</div>
         
-        <div id="file-info" class="hidden" style="text-align: left; background: rgba(255,255,255,0.7); padding: 20px; border-radius: 10px; margin: 20px 0;">
-            <p><strong>ファイル名:</strong> <span id="f-name"></span></p>
-            <p><strong>ファイルサイズ:</strong> <span id="f-size"></span></p>
-            <p><strong>有効期限:</strong> <span id="f-expire"></span></p>
+        <div id="file-info" class="hidden" style="text-align: left; background: white; padding: 20px; border-radius: 14px; margin: 20px 0; border: 1px solid #e5e7eb;">
+            <p style="margin: 8px 0;"><strong>ファイル名:</strong> <span id="f-name" style="color: #4f46e5; word-break: break-all;"></span></p>
+            <p style="margin: 8px 0;"><strong>ファイルサイズ:</strong> <span id="f-size" style="color: #4b5563;"></span></p>
+            <p style="margin: 8px 0;"><strong>有効期限:</strong> <span id="f-expire" style="color: #4b5563;"></span></p>
         </div>
 
-        <button id="download-btn" class="btn hidden" onclick="startDownload()">ダウンロードする</button>
-        <div id="error-msg" class="hidden" style="color: red; font-weight: bold; margin-top: 20px;"></div>
+        <button id="download-btn" class="btn hidden" onclick="startDownload()" style="width: 100%;">ダウンロードする</button>
+        <div id="error-msg" class="hidden" style="color: #ef4444; font-weight: 600; margin-top: 20px; background: rgba(239,68,68,0.1); padding: 12px; border-radius: 10px;"></div>
     </div>
 
     <script>

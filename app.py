@@ -11,11 +11,10 @@ from threading import Thread
 
 app = FastAPI()
 
-# K8sのPVCマウント先（YAMLの設定と合わせる）
 DATA_DIR = "/usr/share/nginx/html/data"
 os.makedirs(DATA_DIR, exist_ok=True)
 META_FILE = os.path.join(DATA_DIR, "meta.json")
-ADMIN_SECRET = "superadmin2026" # 管理者用シークレットキー
+ADMIN_SECRET = "superadmin2026"
 
 def load_meta():
     if os.path.exists(META_FILE):
@@ -27,7 +26,6 @@ def save_meta(data):
     with open(META_FILE, "w") as f:
         json.dump(data, f)
 
-# 裏で定期的に期限切れファイルを削除するバッチ処理
 def cleanup_old_files():
     while True:
         data = load_meta()
@@ -47,11 +45,10 @@ def cleanup_old_files():
         
         if to_delete:
             save_meta(data)
-        time.sleep(3600) # 1時間ごとにチェック
+        time.sleep(3600)
 
 Thread(target=cleanup_old_files, daemon=True).start()
 
-# === API ===
 @app.post("/api/upload")
 async def upload_file(file: UploadFile = File(...), days: int = Form(2)):
     uid = str(uuid.uuid4())
@@ -61,7 +58,6 @@ async def upload_file(file: UploadFile = File(...), days: int = Form(2)):
     with open(save_path, "wb") as f:
         f.write(await file.read())
         
-    # 7日より大きい値（裏コマンド）が来たら永続化
     expires_at = "never" if days > 7 else (datetime.now() + timedelta(days=days)).isoformat()
     
     meta = load_meta()
@@ -74,7 +70,20 @@ async def upload_file(file: UploadFile = File(...), days: int = Form(2)):
     }
     save_meta(meta)
     
-    return {"url": f"/api/download/{uid}"}
+    # 共有リンクはダウンロード用の中間ページを指定
+    return {"url": f"/download.html?id={uid}"}
+
+@app.get("/api/info/{uid}")
+async def get_file_info(uid: str):
+    meta = load_meta()
+    if uid not in meta:
+        raise HTTPException(status_code=404, detail="File not found or expired.")
+    info = meta[uid]
+    return {
+        "original_name": info["original_name"],
+        "size": info["size"],
+        "expires_at": info["expires_at"]
+    }
 
 @app.get("/api/download/{uid}")
 async def download_file(uid: str):
@@ -89,7 +98,6 @@ async def download_file(uid: str):
         
     return FileResponse(path=file_path, filename=info["original_name"])
 
-# 管理用API
 @app.get("/api/admin/list")
 async def admin_list(token: str = Query(None)):
     if token != ADMIN_SECRET:
@@ -111,7 +119,6 @@ async def admin_delete(uid: str, token: str = Query(None)):
         return {"status": "success"}
     raise HTTPException(status_code=404)
 
-# UI（静的ファイル）の配信
 app.mount("/", StaticFiles(directory="static", html=True), name="static")
 
 if __name__ == "__main__":

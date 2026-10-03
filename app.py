@@ -4,9 +4,8 @@ import json
 import time
 from datetime import datetime, timedelta
 from fastapi import FastAPI, File, UploadFile, Form, HTTPException, Query
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, HTMLResponse
 from fastapi.staticfiles import StaticFiles
-import uvicorn
 from threading import Thread
 
 app = FastAPI()
@@ -69,8 +68,6 @@ async def upload_file(file: UploadFile = File(...), days: int = Form(2)):
         "size": os.path.getsize(save_path)
     }
     save_meta(meta)
-    
-    # 共有リンクはダウンロード用の中間ページを指定
     return {"url": f"/download.html?id={uid}"}
 
 @app.get("/api/info/{uid}")
@@ -98,6 +95,12 @@ async def download_file(uid: str):
         
     return FileResponse(path=file_path, filename=info["original_name"])
 
+@app.get("/api/admin/verify")
+async def admin_verify(token: str = Query(None)):
+    if token != ADMIN_SECRET:
+        raise HTTPException(status_code=403, detail="Forbidden")
+    return {"status": "ok"}
+
 @app.get("/api/admin/list")
 async def admin_list(token: str = Query(None)):
     if token != ADMIN_SECRET:
@@ -118,6 +121,19 @@ async def admin_delete(uid: str, token: str = Query(None)):
         save_meta(meta)
         return {"status": "success"}
     raise HTTPException(status_code=404)
+
+# 404防止用の静的HTMLルーティング
+@app.get("/download.html", response_class=HTMLResponse)
+async def serve_download():
+    return FileResponse("static/download.html")
+
+@app.get("/manage.html", response_class=HTMLResponse)
+async def serve_manage():
+    return FileResponse("static/manage.html")
+
+@app.get("/dashboard.html", response_class=HTMLResponse)
+async def serve_dashboard():
+    return FileResponse("static/dashboard.html")
 
 app.mount("/", StaticFiles(directory="static", html=True), name="static")
 

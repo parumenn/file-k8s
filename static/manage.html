@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>Admin Dashboard</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="glass-panel" style="max-width: 800px;">
+        <h2>管理ダッシュボード</h2>
+        <input type="password" id="secret-key" placeholder="管理パスワード" style="padding:5px;">
+        <button onclick="loadFiles()" class="btn">認証して一覧表示</button>
+        
+        <div id="file-list" style="margin-top:20px; text-align:left;"></div>
+    </div>
+
+    <script>
+        async function loadFiles() {
+            const token = document.getElementById('secret-key').value;
+            const res = await fetch('/api/admin/list?token=' + token);
+            if(res.status === 403) return alert("パスワードが違います");
+            
+            const data = await res.json();
+            let html = '<ul>';
+            for (let uid in data) {
+                const file = data[uid];
+                html += `<li style="margin-bottom:10px;">
+                    <strong>${file.original_name}</strong> (期限: ${file.expires_at})
+                    <button onclick="deleteFile('${uid}')" style="color:red; margin-left:10px;">削除</button>
+                </li>`;
+            }
+            html += '</ul>';
+            document.getElementById('file-list').innerHTML = html;
+        }
+
+        async function deleteFile(uid) {
+            const token = document.getElementById('secret-key').value;
+            if(confirm("本当に削除しますか？")) {
+                await fetch('/api/admin/delete/' + uid + '?token=' + token, { method: 'DELETE' });
+                loadFiles();
+            }
+        }
+    </script>
+</body>
+</html>

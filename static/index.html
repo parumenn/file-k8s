@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>Modern File Share</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="glass-panel">
+        <h1 id="app-title" style="user-select: none;">File Share</h1>
+        <p>ファイルをドロップするか、クリックしてアップロード</p>
+        
+        <form id="upload-form">
+            <div class="drop-zone" id="drop-zone">
+                <span id="file-name">ファイルが選択されていません</span>
+                <input type="file" id="file-input" class="hidden" required>
+            </div>
+            
+            <div style="margin-bottom: 15px;">
+                <label>保存期間: </label>
+                <select id="days-select">
+                    <option value="1">1日</option>
+                    <option value="2" selected>2日 (デフォルト)</option>
+                    <option value="3">3日</option>
+                    <option value="7">7日</option>
+                    <!-- 永続化は裏コマンドで追加されます -->
+                </select>
+            </div>
+            
+            <button type="submit" class="btn">アップロードしてリンク生成</button>
+        </form>
+
+        <div id="result" class="hidden">
+            <h3>共有リンク:</h3>
+            <a id="download-link" href="#" target="_blank" style="color:#764ba2; font-weight:bold;"></a>
+        </div>
+    </div>
+
+    <script>
+        const dropZone = document.getElementById('drop-zone');
+        const fileInput = document.getElementById('file-input');
+        const fileName = document.getElementById('file-name');
+        
+        // ドラッグ＆ドロップのUI制御
+        dropZone.addEventListener('click', () => fileInput.click());
+        fileInput.addEventListener('change', () => {
+            if(fileInput.files.length > 0) fileName.textContent = fileInput.files[0].name;
+        });
+        dropZone.addEventListener('dragover', (e) => { e.preventDefault(); dropZone.classList.add('dragover'); });
+        dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
+        dropZone.addEventListener('drop', (e) => {
+            e.preventDefault(); dropZone.classList.remove('dragover');
+            if(e.dataTransfer.files.length > 0) {
+                fileInput.files = e.dataTransfer.files;
+                fileName.textContent = fileInput.files[0].name;
+            }
+        });
+
+        // アップロード処理
+        document.getElementById('upload-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const formData = new FormData();
+            formData.append("file", fileInput.files[0]);
+            formData.append("days", document.getElementById('days-select').value);
+
+            const res = await fetch('/api/upload', { method: 'POST', body: formData });
+            const data = await res.json();
+            
+            const resultDiv = document.getElementById('result');
+            const linkTag = document.getElementById('download-link');
+            const fullUrl = window.location.origin + data.url;
+            linkTag.href = data.url;
+            linkTag.textContent = fullUrl;
+            resultDiv.classList.remove('hidden');
+        });
+
+        // 🤫 裏コマンド (タイトル3回クリックで永続化モード解禁)
+        let clickCount = 0;
+        document.getElementById('app-title').addEventListener('click', () => {
+            clickCount++;
+            if(clickCount === 3) {
+                const select = document.getElementById('days-select');
+                const opt = document.createElement('option');
+                opt.value = "99";
+                opt.textContent = "永続化 (無期限)";
+                select.appendChild(opt);
+                select.value = "99";
+                alert("✨ 永続化モードが解放されました");
+            }
+        });
+    </script>
+</body>
+</html>

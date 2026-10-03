@@ -3,10 +3,10 @@ import uuid
 import json
 import time
 from datetime import datetime, timedelta
+import uvicorn
 from fastapi import FastAPI, File, UploadFile, Form, HTTPException, Query
 from fastapi.responses import FileResponse, HTMLResponse
 from fastapi.staticfiles import StaticFiles
-import uvicorn
 from threading import Thread
 
 app = FastAPI()

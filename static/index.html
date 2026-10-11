@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Modern File Share - Override Edition</title>
-    <!-- 元の背景素材の依存関係 -->
+    <!-- 背景素材の依存関係 -->
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=Roboto+Mono:wght@400;700&display=swap" rel="stylesheet">
     <style>
@@ -187,7 +187,6 @@
             pointer-events: auto;
         }
 
-        /* File Share Form Styling adapted to dark theme */
         .main-app-container h1 { margin-top: 0; color: var(--text-main); font-family: 'Rajdhani', sans-serif; letter-spacing: 2px; text-transform: uppercase; text-shadow: 0 0 10px var(--accent-glow); }
         .main-app-container p { color: var(--text-muted); font-size: 0.9rem; margin-bottom: 25px; font-family: 'Roboto Mono', monospace; }
         
@@ -244,24 +243,19 @@
 </head>
 <body>
 
-    <!-- Custom Cursor -->
     <div id="cursor-dot"></div>
     <div id="cursor-ring"></div>
 
-    <!-- Parallax Background Gears (Generated via JS) -->
     <div id="parallax-container" style="position: absolute; width:100%; height:100%; top:0; left:0; z-index: 0;"></div>
-
-    <!-- Waveform Canvas -->
     <canvas id="waveform-canvas"></canvas>
 
     <!-- UI Layer (Background Interactive Toys) -->
     <div id="ui-layer">
-        
         <!-- Left Side: Main Gear -->
         <div class="interactive-zone" style="justify-content: center;">
             <div>
                 <div class="control-label">Main Override Gear</div>
-                <div style="font-size: 0.75rem; color: #64748b; margin-bottom: 20px;">DRAG TO ROTATE</div>
+                <div style="font-size: 0.75rem; color: #64748b; margin-bottom: 20px;">DRAG TO ROTATE (2 CYCLES)</div>
                 <div id="main-gear-container">
                     <svg id="main-gear" viewBox="0 0 200 200"></svg>
                     <div class="gear-hub"></div>
@@ -274,8 +268,6 @@
 
         <!-- Right Side: Lever & Knob -->
         <div class="interactive-zone" style="align-items: flex-end; justify-content: center;">
-            
-            <!-- Lever (Material Alloy) -->
             <div style="display: flex; flex-direction: column; align-items: center; margin-bottom: 40px;">
                 <div class="control-label">Material Alloy</div>
                 <div style="font-size: 0.75rem; color: #64748b; margin-bottom: 15px;">DRAG Y-AXIS</div>
@@ -287,7 +279,6 @@
                 </div>
             </div>
 
-            <!-- Knob (Waveform) -->
             <div style="display: flex; flex-direction: column; align-items: center;">
                 <div class="control-label">Wave Frequency</div>
                 <div style="font-size: 0.75rem; color: #64748b; margin-bottom: 15px;">ROTATE DIAL</div>
@@ -301,7 +292,6 @@
                     FREQ: 1.0x
                 </div>
             </div>
-
         </div>
     </div>
 
@@ -333,7 +323,7 @@
             <label>SECURE TRANSMISSION LINK:</label>
             <div class="result-input-group">
                 <input type="text" id="download-link-input" readonly onclick="this.select();">
-                <button onclick="copyLink()" class="btn" style="width: auto; padding: 10px 16px;">COPY</button>
+                <button type="button" onclick="copyLink()" class="btn" style="width: auto; padding: 10px 16px;">COPY</button>
             </div>
         </div>
     </div>
@@ -342,14 +332,36 @@
         const qs = (sel) => document.querySelector(sel);
         const root = document.documentElement;
 
+        // --- State variables for Secret ---
+        let isPlatinum = false;
+        let isZeroFreq = false;
+        let secretUnlocked = false;
+
+        function unlockSecretMode() {
+            if(secretUnlocked) return;
+            secretUnlocked = true;
+            
+            const select = document.getElementById('days-select');
+            const opt = document.createElement('option');
+            opt.value = "99"; // Backend treats > 7 as "never" (infinite)
+            opt.textContent = "永続 (無期限)";
+            select.appendChild(opt); 
+            select.value = "99";
+            
+            // Visual feedback (Lock theme to Red Warning)
+            root.style.setProperty('--accent', 'rgb(255, 50, 50)');
+            root.style.setProperty('--accent-glow', 'rgba(255, 50, 50, 0.25)');
+            root.style.setProperty('--accent-dim', 'rgba(255, 50, 50, 0.08)');
+            
+            alert("✨ 隠しコマンド承認：【永続（無期限）】モードが解放されました！");
+        }
+
         // --- Custom Cursor ---
         const cursorDot = qs('#cursor-dot');
         const cursorRing = qs('#cursor-ring');
         let mouseX = window.innerWidth / 2, mouseY = window.innerHeight / 2;
         let cX = mouseX, cY = mouseY;
-
         window.addEventListener('mousemove', (e) => { mouseX = e.clientX; mouseY = e.clientY; });
-
         function animateCursor() {
             cursorDot.style.left = `${mouseX}px`; cursorDot.style.top = `${mouseY}px`;
             cX += (mouseX - cX) * 0.2; cY += (mouseY - cY) * 0.2;
@@ -389,7 +401,6 @@
             el.innerHTML = `<svg viewBox="0 0 200 200"><path d="${drawGearPath(100, 100, 95, 80, 8)}" fill="none" stroke="#fff" stroke-width="1"/></svg>`;
             bgContainer.appendChild(el);
         }
-
         window.addEventListener('mousemove', (e) => {
             const x = (e.clientX / window.innerWidth - 0.5) * 40;
             const y = (e.clientY / window.innerHeight - 0.5) * 40;
@@ -451,9 +462,14 @@
                 modeName = factor < 0.5 ? "GOLD" : "PLATINUM";
             }
             
-            root.style.setProperty('--accent', `rgb(${r}, ${g}, ${b})`);
-            root.style.setProperty('--accent-glow', `rgba(${r}, ${g}, ${b}, 0.25)`);
-            root.style.setProperty('--accent-dim', `rgba(${r}, ${g}, ${b}, 0.08)`);
+            isPlatinum = (modeName === "PLATINUM");
+
+            // 隠しモード解放後は赤色のままにする
+            if (!secretUnlocked) {
+                root.style.setProperty('--accent', `rgb(${r}, ${g}, ${b})`);
+                root.style.setProperty('--accent-glow', `rgba(${r}, ${g}, ${b}, 0.25)`);
+                root.style.setProperty('--accent-dim', `rgba(${r}, ${g}, ${b}, 0.08)`);
+            }
             hueReadout.innerText = `MODE: ${modeName}`;
         }
 
@@ -462,9 +478,9 @@
         window.addEventListener('mouseup', () => { isLeverDragging = false; });
         setTimeout(() => { updateLever(leverTrack.getBoundingClientRect().top + leverTrack.offsetHeight/2); }, 100);
 
-        // --- Helper for Rotational Drag ---
-        function handleRotationalDrag(element, onRotate) {
-            let isDragging = false, lastAngle = null, cumulativeRotation = 0;
+        // --- Helper for Rotational Drag (Modified for auto-return support) ---
+        function handleRotationalDrag(element, onRotate, onRelease) {
+            let isDragging = false, lastAngle = null;
             element.addEventListener('mousedown', (e) => {
                 isDragging = true;
                 const rect = element.getBoundingClientRect();
@@ -478,30 +494,63 @@
                 if (delta > Math.PI) delta -= Math.PI * 2;
                 if (delta < -Math.PI) delta += Math.PI * 2;
                 const deltaDeg = delta * (180 / Math.PI);
-                cumulativeRotation += deltaDeg; lastAngle = currentAngle;
-                onRotate(cumulativeRotation, deltaDeg);
+                lastAngle = currentAngle;
+                onRotate(deltaDeg);
             });
-            window.addEventListener('mouseup', () => { isDragging = false; });
+            window.addEventListener('mouseup', () => { 
+                if (isDragging) { isDragging = false; if (onRelease) onRelease(); }
+            });
+            window.addEventListener('mouseleave', () => { 
+                if (isDragging) { isDragging = false; if (onRelease) onRelease(); }
+            });
         }
 
         // --- Knob Control (Waveform) ---
         const waveKnob = qs('#wave-knob'), waveReadout = qs('#wave-readout');
         let knobRotation = 0;
-        handleRotationalDrag(waveKnob, (totalRot, deltaRot) => {
+        handleRotationalDrag(waveKnob, (deltaRot) => {
             knobRotation += deltaRot; knobRotation = Math.max(-150, Math.min(150, knobRotation));
             waveKnob.style.transform = `rotate(${knobRotation}deg)`;
             const pct = (knobRotation + 150) / 300;
             waveFreq = 0.01 + (pct * 0.04); waveAmp = 20 + (pct * 80);
-            waveReadout.innerText = `FREQ: ${(pct * 2).toFixed(2)}x`;
+            
+            const freqVal = (pct * 2).toFixed(2);
+            waveReadout.innerText = `FREQ: ${freqVal}x`;
+            isZeroFreq = (freqVal === "0.00");
         });
 
-        // --- Main Gear Background Interaction ---
+        // --- Main Gear Background Interaction (With Auto-Return & Secret Trigger) ---
         const mainGear = qs('#main-gear-container'), gearSvg = qs('#main-gear'), gearReadout = qs('#gear-readout');
         let gearRotation = 0;
-        handleRotationalDrag(mainGear, (totalRot, deltaRot) => {
-            gearRotation += deltaRot;
+        let gearAnimId = null;
+
+        function updateGearVisual() {
             gearSvg.style.transform = `rotate(${gearRotation}deg)`;
             gearReadout.innerText = `ROT: ${Math.round(gearRotation)}°`;
+        }
+
+        handleRotationalDrag(mainGear, (deltaRot) => {
+            cancelAnimationFrame(gearAnimId); // 回している間は自動戻りをキャンセル
+            gearRotation += deltaRot;
+            updateGearVisual();
+            
+            // 隠しコマンド判定: プラチナ & 0.00x & 720度(2周)
+            if (isPlatinum && isZeroFreq && Math.abs(gearRotation) >= 720) {
+                unlockSecretMode();
+            }
+        }, () => {
+            // マウスを離すと自動で0度へ戻る
+            function animateBack() {
+                gearRotation += (0 - gearRotation) * 0.08; // イージング
+                if (Math.abs(gearRotation) > 1) {
+                    updateGearVisual();
+                    gearAnimId = requestAnimationFrame(animateBack);
+                } else {
+                    gearRotation = 0;
+                    updateGearVisual();
+                }
+            }
+            animateBack();
         });
 
         // --- File Share Original Application Logic ---
@@ -554,19 +603,6 @@
             navigator.clipboard.writeText(linkInput.value);
             alert("Copied to clipboard!");
         }
-
-        // Secret Mode (3 clicks on title)
-        let clickCount = 0;
-        document.getElementById('app-title').addEventListener('click', () => {
-            clickCount++;
-            if(clickCount === 3) {
-                const select = document.getElementById('days-select');
-                const opt = document.createElement('option');
-                opt.value = "99"; opt.textContent = "PERMANENT (UNLIMITED)";
-                select.appendChild(opt); select.value = "99";
-                alert("✨ Permanent mode unlocked");
-            }
-        });
     </script>
 </body>
 </html>

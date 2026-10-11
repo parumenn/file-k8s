@@ -2,50 +2,377 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <title>Modern File Share</title>
-    <link rel="stylesheet" href="style.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Modern File Share - Override Edition</title>
+    <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=Roboto+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            /* Base Theme Variables - Elegant Metallic Default (Gold) */
+            --accent: rgb(212, 175, 55);
+            --accent-glow: rgba(212, 175, 55, 0.25);
+            --accent-dim: rgba(212, 175, 55, 0.08);
+            
+            --bg-dark: #12151c;
+            --bg-panel: rgba(18, 21, 28, 0.85);
+            --border-panel: rgba(255, 255, 255, 0.08);
+            
+            --text-main: #f1f5f9;
+            --text-muted: #94a3b8;
+        }
+
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            background-color: var(--bg-dark);
+            background-image: 
+                radial-gradient(circle at 50% 50%, #1a1f2b 0%, var(--bg-dark) 100%),
+                linear-gradient(rgba(255,255,255,0.015) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255,255,255,0.015) 1px, transparent 1px);
+            background-size: 100% 100%, 40px 40px, 40px 40px;
+            overflow: hidden;
+            font-family: 'Rajdhani', sans-serif;
+            color: var(--text-main);
+            user-select: none;
+            cursor: none; /* Custom cursor used */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        /* Custom Cursor */
+        #cursor-dot, #cursor-ring {
+            position: fixed;
+            top: 0; left: 0;
+            transform: translate(-50%, -50%);
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 9999;
+        }
+        #cursor-dot {
+            width: 4px; height: 4px;
+            background-color: var(--accent);
+            box-shadow: 0 0 6px var(--accent);
+        }
+        #cursor-ring {
+            width: 32px; height: 32px;
+            border: 1px solid var(--accent-glow);
+            transition: width 0.2s, height 0.2s, background-color 0.2s;
+        }
+        body:active #cursor-ring {
+            width: 20px; height: 20px;
+            background-color: var(--accent-dim);
+        }
+
+        /* Canvas Waveform Background */
+        #waveform-canvas {
+            position: absolute;
+            bottom: 0; left: 0;
+            width: 100%; 
+            height: 40vh;
+            min-height: 350px;
+            z-index: 1;
+            opacity: 0.8;
+            pointer-events: none;
+        }
+
+        /* Parallax Background Elements */
+        .bg-element {
+            position: absolute;
+            opacity: 0.05;
+            pointer-events: none;
+            will-change: transform;
+        }
+
+        /* Glassmorphic Panels */
+        .glass-panel {
+            background: var(--bg-panel);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid var(--border-panel);
+            border-top: 1px solid rgba(255,255,255,0.2);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5), inset 0 0 20px var(--accent-dim);
+            border-radius: 8px;
+            z-index: 10;
+            width: 90%;
+            max-width: 600px;
+            pointer-events: auto; /* Allow interaction */
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .terminal-header {
+            padding: 15px 25px;
+            background: rgba(0,0,0,0.5);
+            border-bottom: 1px solid var(--border-panel);
+            display: flex; justify-content: space-between; align-items: center;
+        }
+        .terminal-title {
+            font-size: 1.2rem; font-weight: 700;
+            color: var(--accent);
+            text-shadow: 0 0 10px var(--accent-glow);
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            cursor: pointer;
+        }
+        .terminal-status {
+            font-family: 'Roboto Mono', monospace;
+            font-size: 0.9rem; color: #d4af37;
+            display: flex; align-items: center; gap: 8px;
+        }
+        .status-dot {
+            width: 8px; height: 8px; background: #d4af37; border-radius: 50%;
+            animation: pulse-gold 2s infinite;
+        }
+
+        .terminal-body {
+            padding: 30px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            box-sizing: border-box;
+        }
+
+        /* Form Elements adapted to theme */
+        .drop-zone {
+            border: 2px dashed var(--accent-glow);
+            border-radius: 8px;
+            padding: 35px 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background: rgba(0,0,0,0.3);
+            font-family: 'Roboto Mono', monospace;
+            color: var(--text-muted);
+        }
+        .drop-zone:hover, .drop-zone.dragover {
+            background: var(--accent-dim);
+            border-color: var(--accent);
+            color: var(--accent);
+        }
+
+        .form-label {
+            font-size: 0.85rem;
+            letter-spacing: 2px;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            margin-bottom: 8px;
+            display: block;
+        }
+
+        .theme-select, .theme-input {
+            width: 100%;
+            padding: 12px 16px;
+            border-radius: 4px;
+            border: 1px solid var(--border-panel);
+            background: rgba(0,0,0,0.5);
+            color: var(--text-main);
+            font-family: 'Roboto Mono', monospace;
+            outline: none;
+            transition: border-color 0.2s, box-shadow 0.2s;
+            box-sizing: border-box;
+        }
+        .theme-select:focus, .theme-input:focus {
+            border-color: var(--accent);
+            box-shadow: 0 0 8px var(--accent-glow);
+        }
+        
+        .theme-select option {
+            background: var(--bg-dark);
+            color: var(--text-main);
+        }
+
+        .btn {
+            background: linear-gradient(135deg, rgba(212, 175, 55, 0.2), rgba(0,0,0,0));
+            color: var(--accent);
+            border: 1px solid var(--accent);
+            padding: 12px 24px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 1rem;
+            font-family: 'Rajdhani', sans-serif;
+            font-weight: 600;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            transition: all 0.2s ease;
+            text-shadow: 0 0 5px var(--accent-glow);
+            box-shadow: 0 0 10px var(--accent-glow) inset;
+        }
+        .btn:hover {
+            background: var(--accent);
+            color: #000;
+            box-shadow: 0 0 20px var(--accent-glow);
+        }
+
+        .result-panel {
+            background: rgba(0,0,0,0.6);
+            border: 1px solid var(--accent-dim);
+            border-left: 3px solid var(--accent);
+            padding: 15px;
+            border-radius: 4px;
+            margin-top: 10px;
+        }
+
+        .hidden { display: none !important; }
+
+        @keyframes pulse-gold { 0%, 100% { opacity: 1; box-shadow: 0 0 8px #d4af37; } 50% { opacity: 0.4; box-shadow: none; } }
+    </style>
 </head>
 <body>
-    <div class="glass-panel">
-        <h1 id="app-title" style="margin-top: 0; color: #1f2937; user-select: none;">File Share</h1>
-        <p style="color: #4b5563; margin-bottom: 25px;">ファイルをドラッグ＆ドロップまたはクリックしてアップロード</p>
-        
-        <form id="upload-form">
-            <div class="drop-zone" id="drop-zone">
-                <span id="file-name" style="color: #6b7280; font-weight: 500;">ファイルを選択またはドロップ</span>
-                <input type="file" id="file-input" class="hidden" required>
-            </div>
-            
-            <div style="margin-bottom: 25px;">
-                <label style="font-size: 14px; color: #4b5563; font-weight: 500;">保存期間: </label>
-                <select id="days-select" style="padding: 8px 12px; border-radius: 8px; border: 1px solid #d1d5db; background: white;">
-                    <option value="1">1日</option>
-                    <option value="2" selected>2日 (デフォルト)</option>
-                    <option value="3">3日</option>
-                    <option value="7">7日</option>
-                </select>
-            </div>
-            
-            <button type="submit" class="btn" style="width: 100%;">アップロードしてリンクを生成</button>
-        </form>
 
-        <div id="result" class="hidden" style="margin-top:25px; text-align: left; background: rgba(79,70,229,0.05); padding: 15px; border-radius: 12px; border: 1px solid rgba(79,70,229,0.2);">
-            <label style="font-size: 13px; font-weight: 600; color: #4f46e5;">共有リンク:</label>
-            <div style="display: flex; gap: 8px; margin-top: 6px;">
-                <input type="text" id="download-link-input" readonly style="flex: 1; padding: 8px 12px; border-radius: 8px; border: 1px solid #d1d5db; background: white; font-size: 14px;" onclick="this.select();">
-                <button onclick="copyLink()" class="btn" style="padding: 8px 14px; margin: 0; font-size: 14px;">コピー</button>
+    <!-- Custom Cursor -->
+    <div id="cursor-dot"></div>
+    <div id="cursor-ring"></div>
+
+    <!-- Parallax Background -->
+    <div id="parallax-container" style="position: absolute; width:100%; height:100%; top:0; left:0; z-index: 0;"></div>
+
+    <!-- Waveform Canvas -->
+    <canvas id="waveform-canvas"></canvas>
+
+    <!-- Main UI Panel -->
+    <div class="glass-panel">
+        <div class="terminal-header">
+            <div class="terminal-title" id="app-title">CORE: FILE SHARE</div>
+            <div class="terminal-status">
+                <div class="status-dot"></div> ONLINE
+            </div>
+        </div>
+        
+        <div class="terminal-body">
+            <p style="color: var(--text-muted); font-size: 0.9rem; margin-top: 0; font-family: 'Roboto Mono', monospace;">
+                > AWAITING UPLOAD SEQUENCE...
+            </p>
+            
+            <form id="upload-form">
+                <div class="drop-zone" id="drop-zone">
+                    <span id="file-name">SELECT OR DROP FILE HERE</span>
+                    <input type="file" id="file-input" class="hidden" required>
+                </div>
+                
+                <div style="margin-top: 20px;">
+                    <label class="form-label">RETENTION CYCLE</label>
+                    <select id="days-select" class="theme-select">
+                        <option value="1">1 CYCLE (1 DAY)</option>
+                        <option value="2" selected>2 CYCLES (DEFAULT)</option>
+                        <option value="3">3 CYCLES</option>
+                        <option value="7">7 CYCLES</option>
+                    </select>
+                </div>
+                
+                <button type="submit" class="btn" style="width: 100%; margin-top: 25px;">INITIALIZE TRANSFER</button>
+            </form>
+
+            <div id="result" class="result-panel hidden">
+                <label class="form-label" style="color: var(--accent);">TRANSMISSION LINK</label>
+                <div style="display: flex; gap: 10px; margin-top: 10px;">
+                    <input type="text" id="download-link-input" class="theme-input" readonly onclick="this.select();">
+                    <button type="button" onclick="copyLink()" class="btn" style="padding: 8px 16px; min-width: max-content;">COPY</button>
+                </div>
             </div>
         </div>
     </div>
 
     <script>
+        // --- Cursor Animation ---
+        const cursorDot = document.querySelector('#cursor-dot');
+        const cursorRing = document.querySelector('#cursor-ring');
+        let mouseX = window.innerWidth / 2, mouseY = window.innerHeight / 2;
+        let cX = mouseX, cY = mouseY;
+
+        window.addEventListener('mousemove', (e) => {
+            mouseX = e.clientX; mouseY = e.clientY;
+        });
+
+        function animateCursor() {
+            cursorDot.style.left = `${mouseX}px`; cursorDot.style.top = `${mouseY}px`;
+            cX += (mouseX - cX) * 0.2; cY += (mouseY - cY) * 0.2;
+            cursorRing.style.left = `${cX}px`; cursorRing.style.top = `${cY}px`;
+            requestAnimationFrame(animateCursor);
+        }
+        animateCursor();
+
+        // --- Interactive Background ---
+        function drawGearPath(cx, cy, outerR, innerR, teeth) {
+            let path = '';
+            const angleStep = (Math.PI * 2) / (teeth * 2);
+            for (let i = 0; i < teeth * 2; i++) {
+                const r = i % 2 === 0 ? outerR : innerR;
+                const a = i * angleStep, nextA = (i + 1) * angleStep;
+                const x1 = cx + r * Math.cos(a), y1 = cy + r * Math.sin(a);
+                const x2 = cx + r * Math.cos(nextA), y2 = cy + r * Math.sin(nextA);
+                if (i === 0) path += `M ${x1} ${y1} A ${r} ${r} 0 0 1 ${x2} ${y2} `;
+                else path += `L ${x1} ${y1} A ${r} ${r} 0 0 1 ${x2} ${y2} `;
+            }
+            return path + 'Z';
+        }
+
+        const bgContainer = document.querySelector('#parallax-container');
+        for(let i=0; i<5; i++) {
+            const el = document.createElement('div');
+            el.className = 'bg-element';
+            const size = 200 + Math.random() * 300;
+            el.style.width = `${size}px`; el.style.height = `${size}px`;
+            el.style.left = `${Math.random() * 100}vw`; el.style.top = `${Math.random() * 100}vh`;
+            el.innerHTML = `<svg viewBox="0 0 200 200"><path d="${drawGearPath(100, 100, 95, 80, 8)}" fill="none" stroke="#fff" stroke-width="1"/></svg>`;
+            bgContainer.appendChild(el);
+        }
+
+        window.addEventListener('mousemove', (e) => {
+            const x = (e.clientX / window.innerWidth - 0.5) * 40;
+            const y = (e.clientY / window.innerHeight - 0.5) * 40;
+            document.querySelectorAll('.bg-element').forEach((el, index) => {
+                const factor = (index + 1) * 0.5;
+                el.style.transform = `translate(${x * factor}px, ${y * factor}px) rotate(${x*factor}deg)`;
+            });
+        });
+
+        // --- Waveform ---
+        const canvas = document.querySelector('#waveform-canvas');
+        const ctx = canvas.getContext('2d');
+        let width, height, waveTime = 0;
+        const waveFreq = 0.02, waveAmp = 50;
+
+        function resizeCanvas() {
+            width = canvas.width = window.innerWidth;
+            height = canvas.height = canvas.offsetHeight;
+        }
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+
+        function drawWave() {
+            ctx.clearRect(0, 0, width, height);
+            const style = getComputedStyle(document.documentElement);
+            const color = style.getPropertyValue('--accent').trim() || 'rgb(212, 175, 55)';
+            const glowColor = style.getPropertyValue('--accent-glow').trim() || 'rgba(212, 175, 55, 0.25)';
+
+            ctx.beginPath();
+            ctx.moveTo(0, height / 2);
+            for (let x = 0; x < width; x++) {
+                const y = height / 2 
+                        + Math.sin(x * waveFreq + waveTime) * waveAmp
+                        + Math.sin(x * waveFreq * 0.5 - waveTime * 1.5) * (waveAmp * 0.5);
+                ctx.lineTo(x, y);
+            }
+            ctx.strokeStyle = color; ctx.lineWidth = 2; ctx.stroke();
+            ctx.lineTo(width, height); ctx.lineTo(0, height);
+            ctx.fillStyle = glowColor; ctx.fill();
+            
+            waveTime += 0.03;
+            requestAnimationFrame(drawWave);
+        }
+        drawWave();
+
+        // --- Original Application Logic ---
         const dropZone = document.getElementById('drop-zone');
         const fileInput = document.getElementById('file-input');
         const fileName = document.getElementById('file-name');
         
         dropZone.addEventListener('click', () => fileInput.click());
         fileInput.addEventListener('change', () => {
-            if(fileInput.files.length > 0) fileName.textContent = fileInput.files[0].name;
+            if(fileInput.files.length > 0) fileName.textContent = `> ${fileInput.files[0].name}`;
         });
         dropZone.addEventListener('dragover', (e) => { e.preventDefault(); dropZone.classList.add('dragover'); });
         dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
@@ -53,7 +380,7 @@
             e.preventDefault(); dropZone.classList.remove('dragover');
             if(e.dataTransfer.files.length > 0) {
                 fileInput.files = e.dataTransfer.files;
-                fileName.textContent = fileInput.files[0].name;
+                fileName.textContent = `> ${fileInput.files[0].name}`;
             }
         });
 
@@ -63,23 +390,36 @@
             formData.append("file", fileInput.files[0]);
             formData.append("days", document.getElementById('days-select').value);
 
-            const res = await fetch('/api/upload', { method: 'POST', body: formData });
-            const data = await res.json();
+            const btn = e.target.querySelector('button[type="submit"]');
+            const originalText = btn.textContent;
+            btn.textContent = "TRANSMITTING...";
             
-            const resultDiv = document.getElementById('result');
-            const linkInput = document.getElementById('download-link-input');
-            linkInput.value = window.location.origin + data.url;
-            resultDiv.classList.remove('hidden');
+            try {
+                const res = await fetch('/api/upload', { method: 'POST', body: formData });
+                const data = await res.json();
+                
+                const resultDiv = document.getElementById('result');
+                const linkInput = document.getElementById('download-link-input');
+                linkInput.value = window.location.origin + data.url;
+                resultDiv.classList.remove('hidden');
+            } catch (err) {
+                alert("TRANSMISSION FAILED.");
+            } finally {
+                btn.textContent = originalText;
+            }
         });
 
         function copyLink() {
             const linkInput = document.getElementById('download-link-input');
             linkInput.select();
             navigator.clipboard.writeText(linkInput.value);
-            alert("リンクをクリップボードにコピーしました！");
+            
+            const btn = document.querySelector('button[onclick="copyLink()"]');
+            btn.textContent = "COPIED!";
+            setTimeout(() => btn.textContent = "COPY", 2000);
         }
 
-        // 裏コマンド (タイトル3回クリックで永続化モード解禁)
+        // Secret Mode (3 clicks on title)
         let clickCount = 0;
         document.getElementById('app-title').addEventListener('click', () => {
             clickCount++;
@@ -87,10 +427,19 @@
                 const select = document.getElementById('days-select');
                 const opt = document.createElement('option');
                 opt.value = "99";
-                opt.textContent = "永続化 (無期限)";
+                opt.textContent = "PERMANENT OVERRIDE";
                 select.appendChild(opt);
                 select.value = "99";
-                alert("✨ 永続化モードが解放されました");
+                
+                // Visual feedback for secret mode
+                document.documentElement.style.setProperty('--accent', 'rgb(255, 50, 50)');
+                document.documentElement.style.setProperty('--accent-glow', 'rgba(255, 50, 50, 0.25)');
+                document.documentElement.style.setProperty('--accent-dim', 'rgba(255, 50, 50, 0.08)');
+                
+                const statusDots = document.querySelectorAll('.status-dot');
+                statusDots.forEach(dot => dot.style.backgroundColor = 'rgb(255, 50, 50)');
+                
+                alert("CRITICAL OVERRIDE: PERMANENT STORAGE ENGAGED");
             }
         });
     </script>

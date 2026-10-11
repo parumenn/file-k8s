@@ -4,10 +4,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Modern File Share - Override Edition</title>
+    <!-- 元の背景素材の依存関係 -->
+    <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=Roboto+Mono:wght@400;700&display=swap" rel="stylesheet">
     <style>
         :root {
-            /* Base Theme Variables - Elegant Metallic Default (Gold) */
+            /* Base Theme Variables - Interactive (Changed by Lever) */
             --accent: rgb(212, 175, 55);
             --accent-glow: rgba(212, 175, 55, 0.25);
             --accent-dim: rgba(212, 175, 55, 0.08);
@@ -35,7 +37,7 @@
             font-family: 'Rajdhani', sans-serif;
             color: var(--text-main);
             user-select: none;
-            cursor: none; /* Custom cursor used */
+            cursor: none; /* Custom cursor */
             display: flex;
             justify-content: center;
             align-items: center;
@@ -77,147 +79,167 @@
             pointer-events: none;
         }
 
-        /* Parallax Background Elements */
-        .bg-element {
+        /* Interactive UI Layer (Background controls) */
+        #ui-layer {
             position: absolute;
-            opacity: 0.05;
-            pointer-events: none;
-            will-change: transform;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            z-index: 5; /* Behind main panel */
+            display: flex;
+            justify-content: space-between;
+            padding: 40px;
+            box-sizing: border-box;
+            pointer-events: none; /* Let clicks pass through empty space */
         }
 
-        /* Glassmorphic Panels */
-        .glass-panel {
+        .interactive-zone {
+            pointer-events: auto; /* Enable clicks on controls */
+            display: flex;
+            flex-direction: column;
+            gap: 30px;
+        }
+
+        /* Control Labels & UI Elements */
+        .control-label {
+            font-size: 0.85rem; letter-spacing: 2px; color: var(--text-muted);
+            text-transform: uppercase; margin-bottom: 8px; display: flex; align-items: center; gap: 8px;
+        }
+        .control-label::before {
+            content: ''; display: block; width: 8px; height: 8px;
+            background: var(--accent); border-radius: 50%; box-shadow: 0 0 8px var(--accent);
+        }
+
+        #main-gear-container {
+            position: relative; width: 280px; height: 280px;
+            display: flex; align-items: center; justify-content: center;
+            cursor: grab; filter: drop-shadow(0 0 10px var(--accent-dim)); transition: filter 0.3s;
+        }
+        #main-gear-container:active { cursor: grabbing; filter: drop-shadow(0 0 15px var(--accent-glow)); }
+        #main-gear { width: 100%; height: 100%; will-change: transform; }
+        .gear-hub {
+            position: absolute; width: 60px; height: 60px; background: #1e2532;
+            border: 4px solid var(--accent); border-radius: 50%;
+            box-shadow: 0 0 12px var(--accent-glow), inset 0 0 8px rgba(0,0,0,0.5);
+            display: flex; align-items: center; justify-content: center;
+        }
+        .gear-hub::after {
+            content: ''; width: 20px; height: 20px; background: var(--accent);
+            border-radius: 50%; box-shadow: 0 0 8px var(--accent);
+        }
+
+        .lever-track {
+            width: 40px; height: 250px; background: #0b0f19; border-radius: 20px;
+            border: 2px solid #1e293b; position: relative; box-shadow: inset 0 5px 15px rgba(0,0,0,0.8);
+            display: flex; justify-content: center;
+        }
+        .lever-track::before {
+            content: ''; position: absolute; width: 4px; height: 90%; top: 5%;
+            background: linear-gradient(to bottom, #b87333, #d4af37, #c0c0c0); border-radius: 2px; opacity: 0.25;
+        }
+        #hue-lever {
+            position: absolute; width: 70px; height: 40px; background: linear-gradient(135deg, #2b3547, #12151c);
+            border: 2px solid var(--accent); border-radius: 8px; top: 50%; transform: translateY(-50%);
+            cursor: grab; box-shadow: 0 8px 16px rgba(0,0,0,0.5), 0 0 10px var(--accent-glow);
+            display: flex; align-items: center; justify-content: center; transition: box-shadow 0.2s;
+        }
+        #hue-lever:active { cursor: grabbing; box-shadow: 0 4px 8px rgba(0,0,0,0.8), 0 0 15px var(--accent); }
+        #hue-lever::after { content: ''; width: 40px; height: 4px; background: var(--accent); border-radius: 2px; box-shadow: 0 0 4px var(--accent); }
+
+        .knob-container {
+            width: 120px; height: 120px; border-radius: 50%; background: #0f172a;
+            border: 2px solid #1e293b; box-shadow: inset 0 5px 15px rgba(0,0,0,0.8), 0 5px 15px rgba(0,0,0,0.5);
+            display: flex; align-items: center; justify-content: center; position: relative;
+        }
+        .knob-ticks {
+            position: absolute; width: 100%; height: 100%;
+            background: conic-gradient(from 0deg, transparent 0deg, rgba(255,255,255,0.1) 1deg, transparent 2deg);
+            background-size: 100% 100%; border-radius: 50%; pointer-events: none;
+        }
+        #wave-knob {
+            width: 80px; height: 80px; background: linear-gradient(135deg, #2b3547, #12151c); border-radius: 50%;
+            border: 2px solid var(--accent-glow); cursor: grab; box-shadow: 0 8px 16px rgba(0,0,0,0.5);
+            position: relative; transform: rotate(0deg);
+        }
+        #wave-knob:active { cursor: grabbing; border-color: var(--accent); }
+        .knob-indicator {
+            position: absolute; top: 10px; left: 50%; transform: translateX(-50%); width: 6px; height: 20px;
+            background: var(--accent); border-radius: 3px; box-shadow: 0 0 10px var(--accent);
+        }
+
+        .bg-element { position: absolute; opacity: 0.05; pointer-events: none; will-change: transform; }
+
+        /* Main Foreground Application (File Share) */
+        .main-app-container {
+            position: relative;
+            z-index: 20; /* On top of interactive background */
             background: var(--bg-panel);
             backdrop-filter: blur(12px);
             -webkit-backdrop-filter: blur(12px);
             border: 1px solid var(--border-panel);
             border-top: 1px solid rgba(255,255,255,0.2);
-            box-shadow: 0 10px 30px rgba(0,0,0,0.5), inset 0 0 20px var(--accent-dim);
-            border-radius: 8px;
-            z-index: 10;
-            width: 90%;
-            max-width: 600px;
-            pointer-events: auto; /* Allow interaction */
-            display: flex;
-            flex-direction: column;
-            overflow: hidden;
-        }
-
-        .terminal-header {
-            padding: 15px 25px;
-            background: rgba(0,0,0,0.5);
-            border-bottom: 1px solid var(--border-panel);
-            display: flex; justify-content: space-between; align-items: center;
-        }
-        .terminal-title {
-            font-size: 1.2rem; font-weight: 700;
-            color: var(--accent);
-            text-shadow: 0 0 10px var(--accent-glow);
-            letter-spacing: 3px;
-            text-transform: uppercase;
-            cursor: pointer;
-        }
-        .terminal-status {
-            font-family: 'Roboto Mono', monospace;
-            font-size: 0.9rem; color: #d4af37;
-            display: flex; align-items: center; gap: 8px;
-        }
-        .status-dot {
-            width: 8px; height: 8px; background: #d4af37; border-radius: 50%;
-            animation: pulse-gold 2s infinite;
-        }
-
-        .terminal-body {
-            padding: 30px;
-            display: flex;
-            flex-direction: column;
-            gap: 20px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.8), inset 0 0 20px var(--accent-dim);
+            border-radius: 12px;
+            width: 100%;
+            max-width: 500px;
+            padding: 40px;
+            text-align: center;
             box-sizing: border-box;
+            pointer-events: auto;
         }
 
-        /* Form Elements adapted to theme */
+        /* File Share Form Styling adapted to dark theme */
+        .main-app-container h1 { margin-top: 0; color: var(--text-main); font-family: 'Rajdhani', sans-serif; letter-spacing: 2px; text-transform: uppercase; text-shadow: 0 0 10px var(--accent-glow); }
+        .main-app-container p { color: var(--text-muted); font-size: 0.9rem; margin-bottom: 25px; font-family: 'Roboto Mono', monospace; }
+        
         .drop-zone {
             border: 2px dashed var(--accent-glow);
             border-radius: 8px;
-            padding: 35px 20px;
-            text-align: center;
+            padding: 40px 20px;
+            margin: 20px 0;
             cursor: pointer;
             transition: all 0.3s ease;
             background: rgba(0,0,0,0.3);
             font-family: 'Roboto Mono', monospace;
-            color: var(--text-muted);
         }
         .drop-zone:hover, .drop-zone.dragover {
             background: var(--accent-dim);
             border-color: var(--accent);
-            color: var(--accent);
         }
 
-        .form-label {
-            font-size: 0.85rem;
-            letter-spacing: 2px;
-            color: var(--text-muted);
-            text-transform: uppercase;
-            margin-bottom: 8px;
-            display: block;
+        .theme-select {
+            width: 100%; padding: 12px; border-radius: 6px;
+            border: 1px solid var(--border-panel); background: rgba(0,0,0,0.5);
+            color: var(--text-main); font-family: 'Roboto Mono', monospace;
+            outline: none; transition: border-color 0.2s;
         }
-
-        .theme-select, .theme-input {
-            width: 100%;
-            padding: 12px 16px;
-            border-radius: 4px;
-            border: 1px solid var(--border-panel);
-            background: rgba(0,0,0,0.5);
-            color: var(--text-main);
-            font-family: 'Roboto Mono', monospace;
-            outline: none;
-            transition: border-color 0.2s, box-shadow 0.2s;
-            box-sizing: border-box;
-        }
-        .theme-select:focus, .theme-input:focus {
-            border-color: var(--accent);
-            box-shadow: 0 0 8px var(--accent-glow);
-        }
-        
-        .theme-select option {
-            background: var(--bg-dark);
-            color: var(--text-main);
-        }
+        .theme-select:focus { border-color: var(--accent); box-shadow: 0 0 8px var(--accent-glow); }
+        .theme-select option { background: #12151c; color: #fff; }
 
         .btn {
-            background: linear-gradient(135deg, rgba(212, 175, 55, 0.2), rgba(0,0,0,0));
-            color: var(--accent);
-            border: 1px solid var(--accent);
-            padding: 12px 24px;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 1rem;
-            font-family: 'Rajdhani', sans-serif;
-            font-weight: 600;
-            letter-spacing: 2px;
-            text-transform: uppercase;
-            transition: all 0.2s ease;
-            text-shadow: 0 0 5px var(--accent-glow);
-            box-shadow: 0 0 10px var(--accent-glow) inset;
+            background: linear-gradient(135deg, var(--accent-dim), transparent);
+            color: var(--accent); border: 1px solid var(--accent);
+            padding: 12px 24px; border-radius: 6px; cursor: pointer;
+            font-size: 1rem; font-family: 'Rajdhani', sans-serif; font-weight: 700;
+            letter-spacing: 2px; text-transform: uppercase;
+            transition: all 0.2s ease; width: 100%;
         }
         .btn:hover {
-            background: var(--accent);
-            color: #000;
-            box-shadow: 0 0 20px var(--accent-glow);
+            background: var(--accent); color: #000; box-shadow: 0 0 15px var(--accent-glow);
         }
 
-        .result-panel {
-            background: rgba(0,0,0,0.6);
-            border: 1px solid var(--accent-dim);
+        .result-box {
+            margin-top: 25px; text-align: left; background: rgba(0,0,0,0.6);
+            padding: 15px; border-radius: 8px; border: 1px solid var(--accent-dim);
             border-left: 3px solid var(--accent);
-            padding: 15px;
-            border-radius: 4px;
-            margin-top: 10px;
         }
-
+        .result-box label { font-size: 0.8rem; font-family: 'Roboto Mono', monospace; color: var(--accent); }
+        .result-input-group { display: flex; gap: 8px; margin-top: 8px; }
+        .result-input-group input {
+            flex: 1; padding: 10px; border-radius: 4px; border: 1px solid var(--border-panel);
+            background: rgba(0,0,0,0.5); color: var(--text-main); font-family: 'Roboto Mono', monospace;
+        }
         .hidden { display: none !important; }
 
-        @keyframes pulse-gold { 0%, 100% { opacity: 1; box-shadow: 0 0 8px #d4af37; } 50% { opacity: 0.4; box-shadow: none; } }
     </style>
 </head>
 <body>
@@ -226,65 +248,107 @@
     <div id="cursor-dot"></div>
     <div id="cursor-ring"></div>
 
-    <!-- Parallax Background -->
+    <!-- Parallax Background Gears (Generated via JS) -->
     <div id="parallax-container" style="position: absolute; width:100%; height:100%; top:0; left:0; z-index: 0;"></div>
 
     <!-- Waveform Canvas -->
     <canvas id="waveform-canvas"></canvas>
 
-    <!-- Main UI Panel -->
-    <div class="glass-panel">
-        <div class="terminal-header">
-            <div class="terminal-title" id="app-title">CORE: FILE SHARE</div>
-            <div class="terminal-status">
-                <div class="status-dot"></div> ONLINE
+    <!-- UI Layer (Background Interactive Toys) -->
+    <div id="ui-layer">
+        
+        <!-- Left Side: Main Gear -->
+        <div class="interactive-zone" style="justify-content: center;">
+            <div>
+                <div class="control-label">Main Override Gear</div>
+                <div style="font-size: 0.75rem; color: #64748b; margin-bottom: 20px;">DRAG TO ROTATE</div>
+                <div id="main-gear-container">
+                    <svg id="main-gear" viewBox="0 0 200 200"></svg>
+                    <div class="gear-hub"></div>
+                </div>
+                <div style="margin-top: 20px; font-family: 'Roboto Mono'; font-size: 1.2rem; color: var(--accent); text-align: center;" id="gear-readout">
+                    ROT: 0.0°
+                </div>
             </div>
         </div>
-        
-        <div class="terminal-body">
-            <p style="color: var(--text-muted); font-size: 0.9rem; margin-top: 0; font-family: 'Roboto Mono', monospace;">
-                > AWAITING UPLOAD SEQUENCE...
-            </p>
-            
-            <form id="upload-form">
-                <div class="drop-zone" id="drop-zone">
-                    <span id="file-name">SELECT OR DROP FILE HERE</span>
-                    <input type="file" id="file-input" class="hidden" required>
-                </div>
-                
-                <div style="margin-top: 20px;">
-                    <label class="form-label">RETENTION CYCLE</label>
-                    <select id="days-select" class="theme-select">
-                        <option value="1">1 CYCLE (1 DAY)</option>
-                        <option value="2" selected>2 CYCLES (DEFAULT)</option>
-                        <option value="3">3 CYCLES</option>
-                        <option value="7">7 CYCLES</option>
-                    </select>
-                </div>
-                
-                <button type="submit" class="btn" style="width: 100%; margin-top: 25px;">INITIALIZE TRANSFER</button>
-            </form>
 
-            <div id="result" class="result-panel hidden">
-                <label class="form-label" style="color: var(--accent);">TRANSMISSION LINK</label>
-                <div style="display: flex; gap: 10px; margin-top: 10px;">
-                    <input type="text" id="download-link-input" class="theme-input" readonly onclick="this.select();">
-                    <button type="button" onclick="copyLink()" class="btn" style="padding: 8px 16px; min-width: max-content;">COPY</button>
+        <!-- Right Side: Lever & Knob -->
+        <div class="interactive-zone" style="align-items: flex-end; justify-content: center;">
+            
+            <!-- Lever (Material Alloy) -->
+            <div style="display: flex; flex-direction: column; align-items: center; margin-bottom: 40px;">
+                <div class="control-label">Material Alloy</div>
+                <div style="font-size: 0.75rem; color: #64748b; margin-bottom: 15px;">DRAG Y-AXIS</div>
+                <div class="lever-track" id="hue-track">
+                    <div id="hue-lever"></div>
                 </div>
+                <div style="margin-top: 15px; font-family: 'Roboto Mono'; font-size: 1rem; color: var(--accent);" id="hue-readout">
+                    MODE: GOLD
+                </div>
+            </div>
+
+            <!-- Knob (Waveform) -->
+            <div style="display: flex; flex-direction: column; align-items: center;">
+                <div class="control-label">Wave Frequency</div>
+                <div style="font-size: 0.75rem; color: #64748b; margin-bottom: 15px;">ROTATE DIAL</div>
+                <div class="knob-container">
+                    <div class="knob-ticks"></div>
+                    <div id="wave-knob">
+                        <div class="knob-indicator"></div>
+                    </div>
+                </div>
+                <div style="margin-top: 15px; font-family: 'Roboto Mono'; font-size: 1rem; color: var(--accent);" id="wave-readout">
+                    FREQ: 1.0x
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- Main Foreground Content: File Share App -->
+    <div class="main-app-container">
+        <h1 id="app-title">File Share</h1>
+        <p>Drop file to initialize secure transfer</p>
+        
+        <form id="upload-form">
+            <div class="drop-zone" id="drop-zone">
+                <span id="file-name" style="color: var(--text-main);">SELECT OR DROP FILE</span>
+                <input type="file" id="file-input" class="hidden" required>
+            </div>
+            
+            <div style="margin-bottom: 25px; text-align: left;">
+                <label style="font-size: 0.8rem; font-family: 'Roboto Mono', monospace; color: var(--text-muted); display: block; margin-bottom: 8px;">RETENTION CYCLE:</label>
+                <select id="days-select" class="theme-select">
+                    <option value="1">1 DAY</option>
+                    <option value="2" selected>2 DAYS (DEFAULT)</option>
+                    <option value="3">3 DAYS</option>
+                    <option value="7">7 DAYS</option>
+                </select>
+            </div>
+            
+            <button type="submit" class="btn">GENERATE LINK</button>
+        </form>
+
+        <div id="result" class="result-box hidden">
+            <label>SECURE TRANSMISSION LINK:</label>
+            <div class="result-input-group">
+                <input type="text" id="download-link-input" readonly onclick="this.select();">
+                <button onclick="copyLink()" class="btn" style="width: auto; padding: 10px 16px;">COPY</button>
             </div>
         </div>
     </div>
 
     <script>
-        // --- Cursor Animation ---
-        const cursorDot = document.querySelector('#cursor-dot');
-        const cursorRing = document.querySelector('#cursor-ring');
+        const qs = (sel) => document.querySelector(sel);
+        const root = document.documentElement;
+
+        // --- Custom Cursor ---
+        const cursorDot = qs('#cursor-dot');
+        const cursorRing = qs('#cursor-ring');
         let mouseX = window.innerWidth / 2, mouseY = window.innerHeight / 2;
         let cX = mouseX, cY = mouseY;
 
-        window.addEventListener('mousemove', (e) => {
-            mouseX = e.clientX; mouseY = e.clientY;
-        });
+        window.addEventListener('mousemove', (e) => { mouseX = e.clientX; mouseY = e.clientY; });
 
         function animateCursor() {
             cursorDot.style.left = `${mouseX}px`; cursorDot.style.top = `${mouseY}px`;
@@ -294,10 +358,9 @@
         }
         animateCursor();
 
-        // --- Interactive Background ---
+        // --- Generate SVG Gear ---
         function drawGearPath(cx, cy, outerR, innerR, teeth) {
-            let path = '';
-            const angleStep = (Math.PI * 2) / (teeth * 2);
+            let path = ''; const angleStep = (Math.PI * 2) / (teeth * 2);
             for (let i = 0; i < teeth * 2; i++) {
                 const r = i % 2 === 0 ? outerR : innerR;
                 const a = i * angleStep, nextA = (i + 1) * angleStep;
@@ -309,7 +372,14 @@
             return path + 'Z';
         }
 
-        const bgContainer = document.querySelector('#parallax-container');
+        qs('#main-gear').innerHTML = `
+            <path d="${drawGearPath(100, 100, 95, 75, 12)}" fill="var(--bg-panel)" stroke="var(--accent)" stroke-width="2" filter="drop-shadow(0 0 4px var(--accent-glow))"/>
+            <circle cx="100" cy="100" r="50" fill="transparent" stroke="var(--accent)" stroke-width="1.5" stroke-dasharray="10 5" opacity="0.4"/>
+            <path d="M 100 20 L 100 180 M 20 100 L 180 100 M 43 43 L 157 157 M 43 157 L 157 43" stroke="var(--accent)" stroke-width="1.5" opacity="0.2"/>
+        `;
+
+        // --- Parallax Background Generators ---
+        const bgContainer = qs('#parallax-container');
         for(let i=0; i<5; i++) {
             const el = document.createElement('div');
             el.className = 'bg-element';
@@ -329,43 +399,112 @@
             });
         });
 
-        // --- Waveform ---
-        const canvas = document.querySelector('#waveform-canvas');
+        // --- Canvas Waveform ---
+        const canvas = qs('#waveform-canvas');
         const ctx = canvas.getContext('2d');
-        let width, height, waveTime = 0;
-        const waveFreq = 0.02, waveAmp = 50;
+        let width, height, waveTime = 0, waveFreq = 0.02, waveAmp = 50;
 
-        function resizeCanvas() {
-            width = canvas.width = window.innerWidth;
-            height = canvas.height = canvas.offsetHeight;
-        }
-        window.addEventListener('resize', resizeCanvas);
-        resizeCanvas();
+        function resizeCanvas() { width = canvas.width = window.innerWidth; height = canvas.height = canvas.offsetHeight; }
+        window.addEventListener('resize', resizeCanvas); resizeCanvas();
 
         function drawWave() {
             ctx.clearRect(0, 0, width, height);
             const style = getComputedStyle(document.documentElement);
-            const color = style.getPropertyValue('--accent').trim() || 'rgb(212, 175, 55)';
-            const glowColor = style.getPropertyValue('--accent-glow').trim() || 'rgba(212, 175, 55, 0.25)';
+            const color = style.getPropertyValue('--accent').trim();
+            const glowColor = style.getPropertyValue('--accent-glow').trim();
 
-            ctx.beginPath();
-            ctx.moveTo(0, height / 2);
+            ctx.beginPath(); ctx.moveTo(0, height / 2);
             for (let x = 0; x < width; x++) {
-                const y = height / 2 
-                        + Math.sin(x * waveFreq + waveTime) * waveAmp
-                        + Math.sin(x * waveFreq * 0.5 - waveTime * 1.5) * (waveAmp * 0.5);
+                const y = height / 2 + Math.sin(x * waveFreq + waveTime) * waveAmp + Math.sin(x * waveFreq * 0.5 - waveTime * 1.5) * (waveAmp * 0.5);
                 ctx.lineTo(x, y);
             }
             ctx.strokeStyle = color; ctx.lineWidth = 2; ctx.stroke();
             ctx.lineTo(width, height); ctx.lineTo(0, height);
             ctx.fillStyle = glowColor; ctx.fill();
             
-            waveTime += 0.03;
-            requestAnimationFrame(drawWave);
+            waveTime += 0.03; requestAnimationFrame(drawWave);
         }
         drawWave();
 
-        // --- Original Application Logic ---
+        // --- Lever Control (Hue / Material) ---
+        const leverTrack = qs('#hue-track');
+        const leverHandle = qs('#hue-lever');
+        const hueReadout = qs('#hue-readout');
+        let isLeverDragging = false;
+
+        function updateLever(clientY) {
+            const rect = leverTrack.getBoundingClientRect();
+            let y = clientY - rect.top;
+            const maxHandleY = rect.height - leverHandle.offsetHeight;
+            y = Math.max(0, Math.min(y, maxHandleY));
+            leverHandle.style.top = `${y + leverHandle.offsetHeight/2}px`;
+
+            const pct = y / maxHandleY;
+            let r, g, b, modeName;
+            if (pct < 0.5) {
+                const factor = pct / 0.5;
+                r = Math.round(184 + (212 - 184) * factor); g = Math.round(115 + (175 - 115) * factor); b = Math.round(51 + (55 - 51) * factor);
+                modeName = factor < 0.5 ? "COPPER" : "GOLD";
+            } else {
+                const factor = (pct - 0.5) / 0.5;
+                r = Math.round(212 + (229 - 212) * factor); g = Math.round(175 + (228 - 175) * factor); b = Math.round(55 + (226 - 55) * factor);
+                modeName = factor < 0.5 ? "GOLD" : "PLATINUM";
+            }
+            
+            root.style.setProperty('--accent', `rgb(${r}, ${g}, ${b})`);
+            root.style.setProperty('--accent-glow', `rgba(${r}, ${g}, ${b}, 0.25)`);
+            root.style.setProperty('--accent-dim', `rgba(${r}, ${g}, ${b}, 0.08)`);
+            hueReadout.innerText = `MODE: ${modeName}`;
+        }
+
+        leverHandle.addEventListener('mousedown', (e) => { isLeverDragging = true; updateLever(e.clientY); });
+        window.addEventListener('mousemove', (e) => { if (isLeverDragging) updateLever(e.clientY); });
+        window.addEventListener('mouseup', () => { isLeverDragging = false; });
+        setTimeout(() => { updateLever(leverTrack.getBoundingClientRect().top + leverTrack.offsetHeight/2); }, 100);
+
+        // --- Helper for Rotational Drag ---
+        function handleRotationalDrag(element, onRotate) {
+            let isDragging = false, lastAngle = null, cumulativeRotation = 0;
+            element.addEventListener('mousedown', (e) => {
+                isDragging = true;
+                const rect = element.getBoundingClientRect();
+                lastAngle = Math.atan2(e.clientY - (rect.top + rect.height/2), e.clientX - (rect.left + rect.width/2));
+            });
+            window.addEventListener('mousemove', (e) => {
+                if (!isDragging) return;
+                const rect = element.getBoundingClientRect();
+                const currentAngle = Math.atan2(e.clientY - (rect.top + rect.height/2), e.clientX - (rect.left + rect.width/2));
+                let delta = currentAngle - lastAngle;
+                if (delta > Math.PI) delta -= Math.PI * 2;
+                if (delta < -Math.PI) delta += Math.PI * 2;
+                const deltaDeg = delta * (180 / Math.PI);
+                cumulativeRotation += deltaDeg; lastAngle = currentAngle;
+                onRotate(cumulativeRotation, deltaDeg);
+            });
+            window.addEventListener('mouseup', () => { isDragging = false; });
+        }
+
+        // --- Knob Control (Waveform) ---
+        const waveKnob = qs('#wave-knob'), waveReadout = qs('#wave-readout');
+        let knobRotation = 0;
+        handleRotationalDrag(waveKnob, (totalRot, deltaRot) => {
+            knobRotation += deltaRot; knobRotation = Math.max(-150, Math.min(150, knobRotation));
+            waveKnob.style.transform = `rotate(${knobRotation}deg)`;
+            const pct = (knobRotation + 150) / 300;
+            waveFreq = 0.01 + (pct * 0.04); waveAmp = 20 + (pct * 80);
+            waveReadout.innerText = `FREQ: ${(pct * 2).toFixed(2)}x`;
+        });
+
+        // --- Main Gear Background Interaction ---
+        const mainGear = qs('#main-gear-container'), gearSvg = qs('#main-gear'), gearReadout = qs('#gear-readout');
+        let gearRotation = 0;
+        handleRotationalDrag(mainGear, (totalRot, deltaRot) => {
+            gearRotation += deltaRot;
+            gearSvg.style.transform = `rotate(${gearRotation}deg)`;
+            gearReadout.innerText = `ROT: ${Math.round(gearRotation)}°`;
+        });
+
+        // --- File Share Original Application Logic ---
         const dropZone = document.getElementById('drop-zone');
         const fileInput = document.getElementById('file-input');
         const fileName = document.getElementById('file-name');
@@ -413,10 +552,7 @@
             const linkInput = document.getElementById('download-link-input');
             linkInput.select();
             navigator.clipboard.writeText(linkInput.value);
-            
-            const btn = document.querySelector('button[onclick="copyLink()"]');
-            btn.textContent = "COPIED!";
-            setTimeout(() => btn.textContent = "COPY", 2000);
+            alert("Copied to clipboard!");
         }
 
         // Secret Mode (3 clicks on title)
@@ -426,20 +562,9 @@
             if(clickCount === 3) {
                 const select = document.getElementById('days-select');
                 const opt = document.createElement('option');
-                opt.value = "99";
-                opt.textContent = "PERMANENT OVERRIDE";
-                select.appendChild(opt);
-                select.value = "99";
-                
-                // Visual feedback for secret mode
-                document.documentElement.style.setProperty('--accent', 'rgb(255, 50, 50)');
-                document.documentElement.style.setProperty('--accent-glow', 'rgba(255, 50, 50, 0.25)');
-                document.documentElement.style.setProperty('--accent-dim', 'rgba(255, 50, 50, 0.08)');
-                
-                const statusDots = document.querySelectorAll('.status-dot');
-                statusDots.forEach(dot => dot.style.backgroundColor = 'rgb(255, 50, 50)');
-                
-                alert("CRITICAL OVERRIDE: PERMANENT STORAGE ENGAGED");
+                opt.value = "99"; opt.textContent = "PERMANENT (UNLIMITED)";
+                select.appendChild(opt); select.value = "99";
+                alert("✨ Permanent mode unlocked");
             }
         });
     </script>
